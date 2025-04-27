@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoScan AI - Powered by Gemini</title>
+    <title>G-AI - Powered by OpenAI</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -581,7 +581,7 @@
     <div class="splash-screen" id="splash">
         <div class="splash-content">
             <div class="splash-logo">
-                <i class="fas fa-leaf"></i> EcoScan AI
+                <i class="fas fa-leaf"></i> G-AI
             </div>
             <div class="splash-tagline">Detect Greenwashing Instantly</div>
             <div class="spinner"></div>
@@ -592,9 +592,9 @@
         <header>
             <div class="logo">
                 <i class="fas fa-leaf"></i>
-                <span>EcoScan AI</span>
+                <span>G-AI</span>
             </div>
-            <div class="subtitle">Powered by Gemini</div>
+            <div class="subtitle">Powered by OpenAI</div>
             <div class="mode-toggle">
                 <button class="toggle-btn" id="toggleMode">
                     <i class="fas fa-camera"></i> Camera Mode
@@ -653,7 +653,7 @@
     <div class="loading-overlay" id="loading">
         <div class="loading-card">
             <div class="spinner"></div>
-            <div>Analyzing with Gemini AI...</div>
+            <div>Analyzing with OpenAI AI...</div>
             <div>(Requires backend connection)</div>
         </div>
     </div>
@@ -909,7 +909,7 @@
 
                  // *** IMPORTANT: Backend Call ***
                  // This is where you send the image data to your backend server.
-                 // The backend server will then securely call the Gemini API.
+                 // The backend server will then securely call the OpenAI API.
                  const response = await fetch('/api/analyze', {
                      method: 'POST',
                      headers: {
@@ -1039,7 +1039,7 @@
 
             // Add the detailed AI Analysis text
             resultContent.innerHTML += `
-                <div class="analysis-title">Gemini AI Analysis Detail</div>
+                <div class="analysis-title">OpenAI AI Analysis Detail</div>
                 <div class="analysis-content">${analysis || "No detailed analysis provided."}</div>
             `;
 
