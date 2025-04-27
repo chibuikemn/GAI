@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoScan AI - Powered by Gemini</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #064e3b;
+            --danger: #ef4444;
+            --text: #111827;
+            --text-light: #6b7280;
+            --bg: #ffffff;
+            --bg-light: #f9fafb;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative; /* Needed for absolute positioning of upload area */
+        }
+
+        .camera-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #photo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #000;
+            display: none;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .controls {
+            padding: 1rem;
+            background-color: var(--card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            align-items: center; /* Vertically align buttons */
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 5;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        .btn {
+            border: none;
+            border-radius: 9999px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex; /* Use inline-flex for alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            min-width: 120px;
+            text-align: center; /* Center text inside button */
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn i {
+            font-size: 1rem;
+        }
+
+        .capture-btn { /* This style seems defined but not used in the HTML? */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid var(--primary);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .capture-btn::after { /* This style seems defined but not used in the HTML? */
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border-radius: 50%;
+            background-color: var(--primary);
+        }
+
+        .result-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card);
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .result-container.show {
+            transform: translateY(0);
+        }
+
+        .result-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky; /* Keep header visible when scrolling results */
+            top: 0;
+            background-color: var(--card); /* Background for sticky header */
+            z-index: 21;
+        }
+
+        .result-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .result-title i {
+            font-size: 1.5rem;
+        }
+
+        .result-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        .result-content {
+            padding: 1.5rem;
+        }
+
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .badge-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--primary);
+        }
+
+        .badge-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .result-summary {
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .analysis-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 1.5rem; /* Add space above title */
+            margin-bottom: 0.75rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .analysis-content {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            white-space: pre-line; /* Preserve line breaks from AI response */
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none; /* Initially hidden */
+        }
+
+        .loading-card {
+            background-color: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(16, 185, 129, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .splash-logo {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .splash-logo i {
+            font-size: 3rem;
+        }
+
+        .splash-tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            padding: 0.75rem;
+            text-align: center;
+            background-color: var(--bg);
+            border-top: 1px solid var(--border);
+        }
+
+        /* New Feature: File Upload Area */
+        .upload-area {
+            /* display: none; Initially hidden, managed by JS */
+            position: absolute; /* Position over camera container */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; /* Use flex to center content */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+            padding: 2rem;
+            text-align: center;
+            z-index: 2; /* Above video/photo */
+            display: none; /* Initially hidden */
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-btn {
+            margin-top: 1rem;
+        }
+
+        /* Animation for the splash screen */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .splash-content {
+            animation: fadeInUp 0.8s ease-out;
+            text-align: center; /* Center splash text */
+        }
+
+        /* Toggle Button */
+        .mode-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 15;
+        }
+
+        .toggle-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Results visualization */
+        .result-chart {
+            margin: 1.5rem 0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: var(--bg-light);
+            padding: 1rem;
+        }
+
+        .chart-bar {
+            height: 24px;
+            margin-bottom: 0.75rem;
+            background-color: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border); /* Add subtle border */
+        }
+
+        .chart-fill {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align text to right */
+            padding-right: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            text-align: right;
+            box-sizing: border-box; /* Ensure padding doesn't break layout */
+            min-width: 25px; /* Ensure text is visible even for small percentages */
+        }
+
+        .chart-fill.negative {
+            background-color: var(--danger);
+        }
+
+        .chart-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            color: var(--text-light);
+        }
+
+        .key-insights {
+            margin-top: 1.5rem;
+            background-color: var(--bg-light);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border); /* Add subtle border */
+        }
+
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .insight-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .insight-icon {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-top: 0.15rem; /* Align icon nicely with text */
+        }
+        .insight-icon.negative {
+             color: var(--danger); /* Use danger color for negative insights */
+        }
+
+        .insight-text {
+            flex: 1;
+            font-size: 0.9rem;
+             color: var(--text); /* Make insight text darker */
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px; /* Limit width on larger screens */
+                margin: 2rem auto; /* Center container */
+                height: calc(100vh - 4rem); /* Adjust height */
+                border-radius: 1.5rem;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+
+            .result-container {
+                position: absolute; /* Position relative to the container */
+                max-width: 600px; /* Match container width */
+                left: 50%;
+                transform: translateX(-50%) translateY(100%); /* Center horizontally */
+                margin: 0 auto;
+                border-radius: 1.5rem; /* Apply border radius on desktop */
+                /* Remove fixed bottom positioning */
+                bottom: auto;
+                 /* Adjust max-height for desktop if needed */
+                max-height: 70vh;
+            }
+
+            .result-container.show {
+                /* Adjust transform for absolute positioning */
+                transform: translateX(-50%) translateY(0);
+            }
+
+            /* Adjust control button layout on larger screens */
+             .controls {
+                justify-content: space-around; /* Better spacing */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="splash-screen" id="splash">
+        <div class="splash-content">
+            <div class="splash-logo">
+                <i class="fas fa-leaf"></i> EcoScan AI
+            </div>
+            <div class="splash-tagline">Detect Greenwashing Instantly</div>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-leaf"></i>
+                <span>EcoScan AI</span>
+            </div>
+            <div class="subtitle">Powered by Gemini</div>
+            <div class="mode-toggle">
+                <button class="toggle-btn" id="toggleMode">
+                    <i class="fas fa-camera"></i> Camera Mode
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <img id="photo" alt="Captured product image">
+                <canvas id="canvas"></canvas>
+                 <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <div class="upload-text">Drag & drop an image or click to browse</div>
+                    <form id="uploadForm">
+                        <input type="file" id="fileInput" accept="image/*">
+                        <button type="button" class="btn btn-primary upload-btn" id="browseBtn">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <div class="controls">
+            <button id="startCamera" class="btn btn-primary">
+                <i class="fas fa-camera"></i> Start Camera
+            </button>
+            <button id="takePhoto" class="btn btn-primary" style="display:none;" disabled>
+                <i class="fas fa-camera"></i> Take Photo
+            </button>
+            <button id="analyze" class="btn btn-primary" style="display:none;" disabled>
+                <i class="fas fa-search"></i> Analyze
+            </button>
+            <button id="retake" class="btn btn-secondary" style="display:none">
+                <i class="fas fa-redo"></i> Retake/Upload New
+            </button>
+        </div>
+
+        <div class="disclaimer">
+            For educational purposes only. AI analysis requires a backend connection. Results may vary.
+        </div>
+    </div> <div class="result-container" id="resultContainer">
+        <div class="result-header">
+            <div class="result-title" id="resultTitle">
+                </div>
+            <button class="result-close" id="closeResult">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="result-content" id="resultContent">
+            </div>
+    </div>
+
+    <div class="loading-overlay" id="loading">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <div>Analyzing with Gemini AI...</div>
+            <div>(Requires backend connection)</div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo');
+        const startCameraButton = document.getElementById('startCamera');
+        const takePhotoButton = document.getElementById('takePhoto');
+        const analyzeButton = document.getElementById('analyze');
+        const retakeButton = document.getElementById('retake');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultContent = document.getElementById('resultContent');
+        const closeResultButton = document.getElementById('closeResult');
+        const loadingOverlay = document.getElementById('loading');
+        const splashScreen = document.getElementById('splash');
+        const toggleModeButton = document.getElementById('toggleMode');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const cameraContainer = document.querySelector('.camera-container'); // Get camera container
+
+        // State variables
+        let stream = null;
+        let currentMode = 'camera'; // 'camera' or 'upload'
+        let imageDataUrl = null; // Store the captured/uploaded image data URL
+
+        // --- Initialization ---
+
+        // Hide splash screen after animation + delay
+        setTimeout(() => {
+            splashScreen.style.opacity = '0';
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+            }, 500); // Match CSS transition duration
+        }, 2500); // Increased duration for splash visibility
+
+        // Initial UI setup for camera mode
+        setupCameraModeUI();
+
+        // --- Event Listeners ---
+
+        toggleModeButton.addEventListener('click', () => {
+            if (currentMode === 'camera') {
+                switchToUploadMode();
+            } else {
+                switchToCameraMode();
+            }
+            // Reset any previous results or states
+            resetState();
+        });
+
+        browseBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop listeners
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary)';
+            uploadArea.style.backgroundColor = 'rgba(16, 185, 129, 0.1)'; // Highlight effect
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+             uploadArea.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+            handleFileDrop(e);
+        });
+
+        startCameraButton.addEventListener('click', startCamera);
+        takePhotoButton.addEventListener('click', takePhoto);
+        retakeButton.addEventListener('click', resetState); // Retake now resets the state
+        analyzeButton.addEventListener('click', analyzeImage);
+        closeResultButton.addEventListener('click', () => {
+            resultContainer.classList.remove('show');
+        });
+
+        // --- UI Mode Switching Functions ---
+
+        function setupCameraModeUI() {
+            toggleModeButton.innerHTML = '<i class="fas fa-camera"></i> Camera Mode';
+            uploadArea.style.display = 'none';
+            video.style.display = 'block'; // Show video element initially
+            photo.style.display = 'none';
+            startCameraButton.style.display = 'inline-flex';
+            takePhotoButton.style.display = 'none';
+            analyzeButton.style.display = 'none';
+            retakeButton.style.display = 'none';
+            analyzeButton.disabled = true;
+            takePhotoButton.disabled = true; // Disabled until camera starts
+        }
+
+        function setupUploadModeUI() {
+            toggleModeButton.innerHTML = '<i class="fas fa-upload"></i> Upload Mode';
+            stopCamera(); // Ensure camera is off
+            video.style.display = 'none';
+            photo.style.display = 'none';
+            uploadArea.style.display = 'flex';
+            startCameraButton.style.display = 'none';
+            takePhotoButton.style.display = 'none';
+            // Keep analyze button hidden until image is loaded
+            analyzeButton.style.display = 'none';
+            retakeButton.style.display = 'none'; // Show retake only after image load
+            analyzeButton.disabled = true;
+        }
+
+        function switchToUploadMode() {
+            currentMode = 'upload';
+            setupUploadModeUI();
+        }
+
+        function switchToCameraMode() {
+            currentMode = 'camera';
+            setupCameraModeUI();
+        }
+
+        // --- Camera Functions ---
+
+        async function startCamera() {
+            if (stream) { // Stop existing stream if any
+                stopCamera();
+            }
+            try {
+                // Prefer back camera, higher resolution
+                const constraints = {
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                await video.play(); // Ensure video starts playing
+
+                // Update UI after camera starts
+                video.style.display = 'block';
+                photo.style.display = 'none';
+                startCameraButton.style.display = 'none';
+                takePhotoButton.style.display = 'inline-flex';
+                takePhotoButton.disabled = false; // Enable capture button
+                analyzeButton.style.display = 'none';
+                retakeButton.style.display = 'none';
+
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                alert("Could not access the camera. Please ensure permissions are granted and try switching to Upload Mode. Error: " + err.message);
+                switchToUploadMode(); // Fallback to upload mode on error
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                video.srcObject = null; // Clear the video source
+            }
+        }
+
+        function takePhoto() {
+            if (!stream || video.readyState < video.HAVE_METADATA) {
+                console.error("Camera not ready or stream not available.");
+                return;
+            }
+
+            // Set canvas dimensions to actual video stream dimensions
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw the current video frame onto the canvas
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get the image data URL from the canvas (JPEG format, 80% quality)
+            imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            photo.src = imageDataUrl;
+
+            // Update UI: Show photo, hide video, update buttons
+            photo.style.display = 'block';
+            video.style.display = 'none';
+            stopCamera(); // Stop the camera stream after taking the photo
+            takePhotoButton.style.display = 'none';
+            analyzeButton.style.display = 'inline-flex';
+            analyzeButton.disabled = false;
+            retakeButton.style.display = 'inline-flex';
+        }
+
+        // --- File Handling Functions ---
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+             // Reset file input to allow uploading the same file again
+            event.target.value = null;
+        }
+
+        function handleFileDrop(event) {
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imageDataUrl = e.target.result;
+                    photo.src = imageDataUrl;
+                    photo.style.display = 'block';
+                    uploadArea.style.display = 'none'; // Hide upload area
+                    analyzeButton.style.display = 'inline-flex';
+                    analyzeButton.disabled = false;
+                    retakeButton.style.display = 'inline-flex';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select an image file.');
+            }
+        }
+
+
+        // --- Analysis and Display ---
+
+        async function analyzeImage() {
+             if (!imageDataUrl) {
+                 alert("No image captured or uploaded to analyze.");
+                 return;
+             }
+
+            loadingOverlay.style.display = 'flex';
+            analyzeButton.disabled = true;
+            retakeButton.disabled = true; // Disable retake during analysis
+
+            // Simulate API call delay for demo purposes
+            // REMOVE THIS in production and use actual fetch
+            // await new Promise(resolve => setTimeout(resolve, 2500));
+
+             try {
+                 // Remove the "data:image/...;base64," prefix
+                 const base64ImageData = imageDataUrl.split(',')[1];
+
+                 // *** IMPORTANT: Backend Call ***
+                 // This is where you send the image data to your backend server.
+                 // The backend server will then securely call the Gemini API.
+                 const response = await fetch('/api/analyze', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({ image: base64ImageData }) // Send base64 data
+                 });
+
+                 if (!response.ok) {
+                     // Try to get error message from backend response body
+                     let errorMsg = `API request failed with status ${response.status}`;
+                     try {
+                         const errorData = await response.json();
+                         errorMsg += `: ${errorData.error || 'Unknown error'}`;
+                     } catch (e) {
+                         // Ignore if response body is not JSON or empty
+                     }
+                     throw new Error(errorMsg);
+                 }
+
+                 const result = await response.json();
+
+                 // Validate the structure of the result
+                 if (typeof result.isGreenwashing === 'undefined' || !result.analysis) {
+                      throw new Error('Invalid response structure received from API.');
+                 }
+
+                // Ensure confidence and insights are handled even if missing
+                 const confidence = result.confidence ?? 50; // Default confidence if missing
+                 const insights = result.insights ?? []; // Default to empty array if missing
+
+                 displayResult(result.isGreenwashing, result.analysis, confidence, insights);
+
+             } catch (err) {
+                 console.error("Error analyzing image: ", err);
+                 // Display a user-friendly error in the result area
+                 resultTitle.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--danger)"></i> Analysis Failed`;
+                  resultContent.innerHTML = `
+                    <div class="result-summary">
+                         <p>Sorry, the analysis could not be completed.</p>
+                         <p style="color: var(--text-light); font-size: 0.9em; margin-top: 0.5em;">Error: ${err.message}</p>
+                         <p style="color: var(--text-light); font-size: 0.9em; margin-top: 0.5em;">Please ensure the backend server is running and check the console for details.</p>
+                     </div>`;
+                 resultContainer.classList.add('show');
+             } finally {
+                 loadingOverlay.style.display = 'none';
+                 // Re-enable retake button, keep analyze disabled until retake
+                 retakeButton.disabled = false;
+                 analyzeButton.disabled = true;
+             }
+        }
+
+        function displayResult(isGreenwashing, analysis, confidence, insights) {
+            // Calculate scores (ensure confidence is between 0 and 100)
+            confidence = Math.max(0, Math.min(100, confidence));
+            const greenwashingScore = isGreenwashing ? confidence : (100 - confidence);
+            const genuineScore = 100 - greenwashingScore;
+
+            // Determine title and badge based on the result
+            if (isGreenwashing) {
+                resultTitle.innerHTML = `
+                    <i class="fas fa-exclamation-circle" style="color: var(--danger)"></i>
+                    Potential Greenwashing Detected
+                `;
+                resultContent.innerHTML = `
+                    <div class="result-badge badge-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Warning (${greenwashingScore}% Confidence)
+                    </div>
+                    <div class="result-summary">
+                        <p>The analysis suggests this product/packaging might contain misleading environmental claims.</p>
+                    </div>`;
+            } else {
+                 resultTitle.innerHTML = `
+                    <i class="fas fa-check-circle" style="color: var(--primary)"></i>
+                    Likely Eco-Friendly / No Obvious Greenwashing
+                `;
+                 resultContent.innerHTML = `
+                    <div class="result-badge badge-success">
+                        <i class="fas fa-check"></i>
+                        Okay (${genuineScore}% Confidence)
+                    </div>
+                    <div class="result-summary">
+                         <p>The analysis did not detect strong indicators of greenwashing based on the visual information.</p>
+                    </div>`;
+            }
+
+            // Add the chart visualization (common part)
+            resultContent.innerHTML += `
+                <div class="result-chart">
+                    <div class="chart-label">
+                        <span>Greenwashing Indicators</span>
+                        <span>${greenwashingScore}%</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-fill negative" style="width: ${greenwashingScore}%">${greenwashingScore}%</div>
+                    </div>
+
+                    <div class="chart-label">
+                        <span>Genuine Eco Indicators</span>
+                        <span>${genuineScore}%</span>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="chart-fill" style="width: ${genuineScore}%">${genuineScore}%</div>
+                    </div>
+                </div>`;
+
+            // Add Key Findings/Insights if available
+            if (insights && insights.length > 0) {
+                resultContent.innerHTML += `
+                    <div class="key-insights">
+                        <div class="analysis-title">Key Findings</div>
+                        ${insights.map(insight => `
+                            <div class="insight-item">
+                                <div class="insight-icon ${isGreenwashing ? 'negative fas fa-exclamation-triangle' : 'fas fa-leaf'}"></div>
+                                <div class="insight-text">${insight}</div>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            } else {
+                 resultContent.innerHTML += `
+                    <div class="key-insights">
+                        <div class="analysis-title">Key Findings</div>
+                        <p style="color: var(--text-light); font-style: italic;">No specific findings highlighted by the AI for this image.</p>
+                    </div>`;
+            }
+
+            // Add the detailed AI Analysis text
+            resultContent.innerHTML += `
+                <div class="analysis-title">Gemini AI Analysis Detail</div>
+                <div class="analysis-content">${analysis || "No detailed analysis provided."}</div>
+            `;
+
+            // Show the result container
+            resultContainer.scrollTop = 0; // Scroll to top of results
+            resultContainer.classList.add('show');
+        }
+
+        // --- Reset State ---
+
+        function resetState() {
+            stopCamera(); // Ensure camera is off
+            imageDataUrl = null; // Clear stored image data
+            photo.src = '#'; // Clear image src
+            photo.style.display = 'none';
+            resultContainer.classList.remove('show'); // Hide results
+            analyzeButton.disabled = true;
+            retakeButton.style.display = 'none';
+            analyzeButton.style.display = 'none'; // Hide analyze button until ready
+
+            // Reset UI based on current mode
+            if (currentMode === 'camera') {
+                setupCameraModeUI();
+                // Optionally automatically start camera again?
+                 // startCamera(); // Uncomment if you want camera to restart on retake
+            } else {
+                setupUploadModeUI();
+            }
+        }
+
+    </script>
+</body>
+</html>
