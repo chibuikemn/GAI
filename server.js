@@ -155,7 +155,7 @@ app.use((req, res) => {
 app.listen(port, '0.0.0.0', () => {
   console.log(`
   =========================================
-  ✅ EcoScan AI Server Running
+  ✅ G-AI Server Running
   🌐 Local Access: http://localhost:${port}
   📱 Network Access: http://10.17.215.148:${port}
   📊 API Endpoint: http://10.17.215.148:${port}/api/analyze
